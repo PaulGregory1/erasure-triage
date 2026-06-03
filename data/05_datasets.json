@@ -1,0 +1,133 @@
+{
+  "p_target": 0.001,
+  "p_train": 0.003,
+  "loss_ratio": 1.0,
+  "sets": [
+    {
+      "tag": "train_cnot_d3",
+      "d": 3,
+      "p": 0.003,
+      "shots": 2000000,
+      "pos_rate": 0.0258235,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "train_cnot_d5",
+      "d": 5,
+      "p": 0.003,
+      "shots": 2000000,
+      "pos_rate": 0.019311,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "train_chain3_d3",
+      "d": 3,
+      "p": 0.003,
+      "shots": 2000000,
+      "pos_rate": 0.0745985,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "train_chain3_d5",
+      "d": 5,
+      "p": 0.003,
+      "shots": 2000000,
+      "pos_rate": 0.064356,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "eval_cnot_d3",
+      "d": 3,
+      "p": 0.001,
+      "shots": 300000,
+      "pos_rate": 0.00679,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "eval_cnot_d5",
+      "d": 5,
+      "p": 0.001,
+      "shots": 300000,
+      "pos_rate": 0.00453,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "eval_cnot_d7",
+      "d": 7,
+      "p": 0.001,
+      "shots": 150000,
+      "pos_rate": 0.006486666666666667,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "eval_chain3_d3",
+      "d": 3,
+      "p": 0.001,
+      "shots": 200000,
+      "pos_rate": 0.019605,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "eval_chain3_d5",
+      "d": 5,
+      "p": 0.001,
+      "shots": 100000,
+      "pos_rate": 0.01527,
+      "seconds": 0.0,
+      "cached": true
+    },
+    {
+      "tag": "eval_chain3_d7",
+      "d": 7,
+      "p": 0.001,
+      "shots": 20000,
+      "pos_rate": 0.02175,
+      "seconds": 714.9117360409582,
+      "bposd_pos_rate": 0.00025
+    },
+    {
+      "tag": "evalhi_cnot_d3",
+      "d": 3,
+      "p": 0.003,
+      "shots": 150000,
+      "pos_rate": 0.025413333333333333,
+      "seconds": 4.373285499983467,
+      "bposd_pos_rate": 0.011613333333333333
+    },
+    {
+      "tag": "evalhi_cnot_d5",
+      "d": 5,
+      "p": 0.003,
+      "shots": 150000,
+      "pos_rate": 0.018626666666666666,
+      "seconds": 34.13410045800265,
+      "bposd_pos_rate": 0.00384
+    },
+    {
+      "tag": "evalhi_chain3_d3",
+      "d": 3,
+      "p": 0.003,
+      "shots": 100000,
+      "pos_rate": 0.07476,
+      "seconds": 27.11994854104705,
+      "bposd_pos_rate": 0.03369
+    },
+    {
+      "tag": "evalhi_chain3_d5",
+      "d": 5,
+      "p": 0.003,
+      "shots": 50000,
+      "pos_rate": 0.06586,
+      "seconds": 267.2566389590502,
+      "bposd_pos_rate": 0.01456
+    }
+  ]
+}

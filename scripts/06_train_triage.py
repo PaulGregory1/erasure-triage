@@ -173,9 +173,25 @@ if __name__ == "__main__":
                         f"{gain_at(c, 0.10):>7.2e}"
                     )
 
+        # ---- seed robustness (§9.4) -------------------------------------------------
+        # Three independent trainings. If the escalation curve moves more between seeds
+        # than it moves between models, the model comparison is noise and we should say so.
+        Xev, yev, ybev = load(f"eval_{cname}_d5")
+        seed_lers: list[float] = []
+        for sd in (0, 1, 2):
+            m_s, iso_s = train_lightgbm(Xtr, ytr, ALL_FEATURES, seed=sd)
+            c = escalation_curve(lgbm_scorer(m_s, iso_s, Xev, gap_used=True), yev, ybev)
+            seed_lers.append(gain_at(c, 0.01))
+        spread = float(np.std(seed_lers))
+        print(f"\n  seed robustness (LER at 1% escalation, eval_{cname}_d5, 3 seeds):")
+        print(f"    {['%.3e' % v for v in seed_lers]}  ->  mean {np.mean(seed_lers):.3e} "
+              f"± {spread:.1e}")
+
         report["models"][cname] = {
             "lgbm_train_s": t_lgbm, "mlp_train_s": t_mlp, "mlp_params": n_params,
             "n_train": int(len(ytr)), "pos_rate": float(ytr.mean()),
+            "seed_lers_at_1pct": seed_lers,
+            "seed_spread": spread,
         }
 
     (DATA / "06_triage.json").write_text(json.dumps(report, indent=2))

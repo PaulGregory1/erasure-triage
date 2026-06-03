@@ -1,0 +1,67 @@
+# Every hyperparameter that could change a number in the paper, in one versioned place.
+# The code reads its physical regime from src/config.py; this file documents the model
+# and sweep settings so a reviewer can see all of them without reading the scripts.
+
+physics:
+  p_target: 1.0e-3        # deployment regime: matching fails ~1e-3 per shot here
+  p_train: 3.0e-3         # 3x, where failures are common enough to train on (§7.3)
+  loss_ratio: 1.0         # p_loss / p_2q -- heralded atom loss
+  distances_trained: [3, 5]
+  distance_held_out: 7    # never seen during training; the generalisation test
+
+noise_model:              # NoiseModel.uniform(p, loss_ratio) expands p into these
+  p_2q: p                 # Rydberg two-qubit gate, DEPOLARIZE2
+  p_1q: p / 10            # single-qubit gate
+  p_idle: p / 10          # idling within a round
+  p_transport: p / 3      # idling while atoms are moved for a transversal gate
+  p_m: p                  # measurement flip, X_ERROR before M
+  p_r: p                  # reset flip, X_ERROR after R
+  p_loss: loss_ratio * p             # HERALDED_ERASE, per data qubit per round
+  p_loss_transport: loss_ratio * p/3 # HERALDED_ERASE during transport
+
+decoders:
+  bp_osd:
+    max_iter: 30
+    bp_method: ms
+    ms_scaling_factor: 0.625
+    schedule: parallel
+    osd_method: osd_cs
+    osd_order: 10
+  matching:
+    library: pymatching (sparse blossom)
+    graph: decomposed DEM, ignore_decomposition_failures=True
+
+triage:
+  lightgbm:
+    n_estimators: 400
+    num_leaves: 48
+    max_depth: 6
+    learning_rate: 0.06
+    min_child_samples: 40
+    subsample: 0.85
+    colsample_bytree: 0.85
+    scale_pos_weight: (n_neg / n_pos)   # the classes are 1-5% positive at p_train
+    calibration: isotonic, on a held-out 25% split
+  mlp:
+    layers: [34, 64, 32, 1]
+    optimiser: adam, lr 2e-3
+    epochs: 25
+    batch_size: 4096
+  seeds: [0, 1, 2]        # §9.4
+
+shots:
+  train_per_config: 2_000_000
+  eval_cnot_d3: 300_000
+  eval_cnot_d5: 300_000
+  eval_cnot_d7: 150_000
+  eval_chain3_d3: 200_000
+  eval_chain3_d5: 100_000
+  eval_chain3_d7: 20_000   # BP+OSD costs ~150 ms/shot here; this is the binding constraint
+  threshold_sweep: 400_000
+  erasure_sweep: 300_000
+
+latency:
+  machine: Apple M3 Pro
+  omp_num_threads: 1
+  method: per-shot perf_counter_ns, warm-up discarded
+  reported: median and p99 (the tail is what builds the backlog)

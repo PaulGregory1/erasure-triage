@@ -24,12 +24,14 @@ if not Path(PY).exists():
 STAGES = [
     ("01_validate_circuits", "distance, hyperedges, single-fault test, S2 gate"),
     ("02_thresholds", "memory threshold — is the noise model sane?"),
+    ("02b_scaling", "the distance collapse: MWPM loses d, BP+OSD keeps it"),
     ("03_erasure", "atom loss + dynamic reweighting  → figure 1"),
     ("04_oracle", "P(BP+OSD right | matching wrong) — the go/no-go number"),
     ("05_generate_dataset", "shots, features, labels → data/*.parquet"),
     ("06_train_triage", "LightGBM + MLP vs the baseline ladder"),
     ("07_pareto", "per-shot latency, Pareto frontier"),
     ("08_figures", "figures 2, 3, 4"),
+    ("09_mixture", "transfer across noise level: why the model breaks, and the fix"),
 ]
 
 

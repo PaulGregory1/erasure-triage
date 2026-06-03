@@ -1,0 +1,250 @@
+{
+  "mix_ps": [
+    0.001,
+    0.0017,
+    0.003
+  ],
+  "shots_per_p": 700000,
+  "rows": [
+    {
+      "circuit": "cnot",
+      "d": 3,
+      "model": "gap only (no training)",
+      "ler_1pct": 0.0028098870056497173,
+      "ler_5pct": 0.0025532264860797594,
+      "ler_10pct": 0.0017866666666666667,
+      "matching_ler": 0.00679,
+      "bposd_ler": 0.00187
+    },
+    {
+      "circuit": "cnot",
+      "d": 3,
+      "model": "LightGBM @ p_train",
+      "ler_1pct": 0.0015105865102639296,
+      "ler_5pct": 0.0013590810598405748,
+      "ler_10pct": 0.0017655109489051095,
+      "matching_ler": 0.00679,
+      "bposd_ler": 0.00187
+    },
+    {
+      "circuit": "cnot",
+      "d": 3,
+      "model": "LightGBM @ mixed p",
+      "ler_1pct": 0.001276990291262136,
+      "ler_5pct": 0.0014940458119658121,
+      "ler_10pct": 0.001762433982957901,
+      "matching_ler": 0.00679,
+      "bposd_ler": 0.00187
+    },
+    {
+      "circuit": "cnot",
+      "d": 3,
+      "model": "LightGBM scale-free",
+      "ler_1pct": 0.0012716539440203562,
+      "ler_5pct": 0.0013580566225636647,
+      "ler_10pct": 0.001674117172469435,
+      "matching_ler": 0.00679,
+      "bposd_ler": 0.00187
+    },
+    {
+      "circuit": "cnot",
+      "d": 5,
+      "model": "gap only (no training)",
+      "ler_1pct": 0.0028780717488789236,
+      "ler_5pct": 0.00018698581560283687,
+      "ler_10pct": 0.00019077255537547274,
+      "matching_ler": 0.00453,
+      "bposd_ler": 0.00018
+    },
+    {
+      "circuit": "cnot",
+      "d": 5,
+      "model": "LightGBM @ p_train",
+      "ler_1pct": 0.003002772416566144,
+      "ler_5pct": 0.0006197250376838713,
+      "ler_10pct": 0.00017666666666666666,
+      "matching_ler": 0.00453,
+      "bposd_ler": 0.00018
+    },
+    {
+      "circuit": "cnot",
+      "d": 5,
+      "model": "LightGBM @ mixed p",
+      "ler_1pct": 0.00021308319738988583,
+      "ler_5pct": 0.00016930125883773064,
+      "ler_10pct": 0.00017695123136603428,
+      "matching_ler": 0.00453,
+      "bposd_ler": 0.00018
+    },
+    {
+      "circuit": "cnot",
+      "d": 5,
+      "model": "LightGBM scale-free",
+      "ler_1pct": 0.0007734175691937425,
+      "ler_5pct": 0.00017588418635170602,
+      "ler_10pct": 0.00017666666666666666,
+      "matching_ler": 0.00453,
+      "bposd_ler": 0.00018
+    },
+    {
+      "circuit": "cnot",
+      "d": 7,
+      "model": "gap only (no training)",
+      "ler_1pct": 0.002639417670682731,
+      "ler_5pct": 6.221070811744386e-05,
+      "ler_10pct": 1.4518002322880367e-05,
+      "matching_ler": 0.006486666666666667,
+      "bposd_ler": 1.3333333333333333e-05
+    },
+    {
+      "circuit": "cnot",
+      "d": 7,
+      "model": "LightGBM @ p_train",
+      "ler_1pct": 0.003813399386647794,
+      "ler_5pct": 0.00012277777777777775,
+      "ler_10pct": 1.765799152137904e-05,
+      "matching_ler": 0.006486666666666667,
+      "bposd_ler": 1.3333333333333333e-05
+    },
+    {
+      "circuit": "cnot",
+      "d": 7,
+      "model": "LightGBM @ mixed p",
+      "ler_1pct": 0.0018766975717439294,
+      "ler_5pct": 6.97464006431338e-05,
+      "ler_10pct": 1.9593678734464364e-05,
+      "matching_ler": 0.006486666666666667,
+      "bposd_ler": 1.3333333333333333e-05
+    },
+    {
+      "circuit": "cnot",
+      "d": 7,
+      "model": "LightGBM scale-free",
+      "ler_1pct": 0.002736965861143076,
+      "ler_5pct": 3.632296781232951e-05,
+      "ler_10pct": 1.3333333333333333e-05,
+      "matching_ler": 0.006486666666666667,
+      "bposd_ler": 1.3333333333333333e-05
+    },
+    {
+      "circuit": "chain3",
+      "d": 3,
+      "model": "gap only (no training)",
+      "ler_1pct": 0.012856263250883392,
+      "ler_5pct": 0.00666362962962963,
+      "ler_10pct": 0.007347811531308122,
+      "matching_ler": 0.019605,
+      "bposd_ler": 0.00573
+    },
+    {
+      "circuit": "chain3",
+      "d": 3,
+      "model": "LightGBM @ p_train",
+      "ler_1pct": 0.011628030303030303,
+      "ler_5pct": 0.006412934065934066,
+      "ler_10pct": 0.0057855516317584016,
+      "matching_ler": 0.019605,
+      "bposd_ler": 0.00573
+    },
+    {
+      "circuit": "chain3",
+      "d": 3,
+      "model": "LightGBM @ mixed p",
+      "ler_1pct": 0.010858157894736842,
+      "ler_5pct": 0.004140815518606492,
+      "ler_10pct": 0.004422276557327716,
+      "matching_ler": 0.019605,
+      "bposd_ler": 0.00573
+    },
+    {
+      "circuit": "chain3",
+      "d": 3,
+      "model": "LightGBM scale-free",
+      "ler_1pct": 0.011144929577464789,
+      "ler_5pct": 0.004143832357247438,
+      "ler_10pct": 0.004266701175153889,
+      "matching_ler": 0.019605,
+      "bposd_ler": 0.00573
+    },
+    {
+      "circuit": "chain3",
+      "d": 5,
+      "model": "gap only (no training)",
+      "ler_1pct": 0.012399192825112107,
+      "ler_5pct": 0.008407699711260827,
+      "ler_10pct": 0.0029819082377476537,
+      "matching_ler": 0.01527,
+      "bposd_ler": 0.0007
+    },
+    {
+      "circuit": "chain3",
+      "d": 5,
+      "model": "LightGBM @ p_train",
+      "ler_1pct": 0.012335975609756097,
+      "ler_5pct": 0.007782274881516588,
+      "ler_10pct": 0.004179239074550129,
+      "matching_ler": 0.01527,
+      "bposd_ler": 0.0007
+    },
+    {
+      "circuit": "chain3",
+      "d": 5,
+      "model": "LightGBM @ mixed p",
+      "ler_1pct": 0.007457599999999999,
+      "ler_5pct": 0.0011626284348864994,
+      "ler_10pct": 0.0007263330029732408,
+      "matching_ler": 0.01527,
+      "bposd_ler": 0.0007
+    },
+    {
+      "circuit": "chain3",
+      "d": 5,
+      "model": "LightGBM scale-free",
+      "ler_1pct": 0.011066315789473685,
+      "ler_5pct": 0.004678342939481267,
+      "ler_10pct": 0.0009532799999999999,
+      "matching_ler": 0.01527,
+      "bposd_ler": 0.0007
+    },
+    {
+      "circuit": "chain3",
+      "d": 7,
+      "model": "gap only (no training)",
+      "ler_1pct": 0.017686666666666667,
+      "ler_5pct": 0.007896226415094338,
+      "ler_10pct": 0.00027243589743589737,
+      "matching_ler": 0.02175,
+      "bposd_ler": 0.00025
+    },
+    {
+      "circuit": "chain3",
+      "d": 7,
+      "model": "LightGBM @ p_train",
+      "ler_1pct": 0.01924285714285714,
+      "ler_5pct": 0.012846428571428571,
+      "ler_10pct": 0.00658960396039604,
+      "matching_ler": 0.02175,
+      "bposd_ler": 0.00025
+    },
+    {
+      "circuit": "chain3",
+      "d": 7,
+      "model": "LightGBM @ mixed p",
+      "ler_1pct": 0.01582857142857143,
+      "ler_5pct": 0.006423076923076923,
+      "ler_10pct": 0.0016544342507645254,
+      "matching_ler": 0.02175,
+      "bposd_ler": 0.00025
+    },
+    {
+      "circuit": "chain3",
+      "d": 7,
+      "model": "LightGBM scale-free",
+      "ler_1pct": 0.016943939393939393,
+      "ler_5pct": 0.006966594827586207,
+      "ler_10pct": 0.0013137681159420286,
+      "matching_ler": 0.02175,
+      "bposd_ler": 0.00025
+    }
+  ]
+}

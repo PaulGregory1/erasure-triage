@@ -38,15 +38,20 @@ LOSS_RATIO = 1.0
 
 TRAIN_SHOTS = _shots(2_000_000)
 
-# The eval sets need BP+OSD on *every* shot, and BP+OSD costs 0.08 ms at d=3 and 23 ms
-# on chain3 at d=5. So the eval budget is set per configuration to keep the whole run
-# inside an hour, while still leaving >1000 fast-decoder failures in each set.
+# The eval sets need BP+OSD on *every* shot, and BP+OSD costs 0.08 ms per shot at d=3 but
+# ~23 ms on chain3 at d=5 and ~150 ms at d=7. So the eval budget is set per configuration
+# from that cost, not from a round number: enough shots to leave a few hundred fast-decoder
+# failures in each set, and no more. The d=7 sets are the held-out generalisation test, so
+# they only need to resolve the *shape* of the curve, not its fourth digit.
 EVAL_SHOTS = {
-    k: _shots(v, floor=20_000) for k, v in {
-        ("cnot", 3): 300_000, ("cnot", 5): 300_000, ("cnot", 7): 200_000,
-        ("chain3", 3): 200_000, ("chain3", 5): 120_000, ("chain3", 7): 60_000,
+    k: _shots(v, floor=10_000) for k, v in {
+        ("cnot", 3): 300_000, ("cnot", 5): 300_000, ("cnot", 7): 150_000,
+        ("chain3", 3): 200_000, ("chain3", 5): 100_000, ("chain3", 7): 20_000,
     }.items()
 }
+# Small chunks: BP+OSD is the bottleneck and the pool has 10 workers, so a 50k chunk would
+# leave most of them idle at the end of a set.
+CHUNK = 10_000
 
 PROGRAMS = {
     "cnot": lambda: transversal_cnot(1, "Z"),
@@ -59,10 +64,21 @@ EVAL_D = (3, 5, 7)
 
 
 def build(tag: str, prog, d: int, p: float, shots: int, with_bposd: bool, seed: int) -> dict:
+    # Resumable: the BP+OSD eval sets take tens of minutes, and losing them to an
+    # interrupted run is not acceptable. Delete data/*.parquet to force a rebuild.
+    path = DATA / f"{tag}.parquet"
+    if path.exists():
+        df = pd.read_parquet(path, columns=["y"])
+        print(f"  {tag:<26} {len(df):>9,} shots  {df['y'].mean():>7.3%} positives  "
+              f"(cached, skipped)")
+        return {"tag": tag, "d": d, "p": p, "shots": int(len(df)),
+                "pos_rate": float(df["y"].mean()), "seconds": 0.0, "cached": True}
+
     t0 = time.perf_counter()
     ds = generate_dataset(
         prog, d, NoiseModel.uniform(p, loss_ratio=LOSS_RATIO),
         shots=shots, seed=seed, with_bposd=with_bposd,
+        chunk=CHUNK if with_bposd else 50_000,
     )
     dt = time.perf_counter() - t0
     df = pd.DataFrame(ds["X"], columns=ds["names"])

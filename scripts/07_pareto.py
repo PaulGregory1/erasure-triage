@@ -69,7 +69,26 @@ STYLE = {
 
 # --------------------------------------------------------------------------------------
 def measure_latency(cname: str, d: int) -> dict:
-    """Per-shot decode latency for the fast leg, the gap, and the slow leg."""
+    """Per-shot latency of each decoder *core*, not of our Python orchestration.
+
+    This distinction matters and the first version of this script got it wrong. Calling our
+    own ``decode_grouped_full`` on a batch of one measures ~6 us of numpy bookkeeping --
+    array allocation, the erasure-pattern grouping dict, the herald bookkeeping -- which
+    swamps a matching decode that actually takes well under a microsecond. That is a
+    property of the harness, not of the decoder, and a production decoder in C++ or on an
+    FPGA would not pay it.
+
+    So each component is timed by calling straight into the underlying library (pymatching
+    and ldpc are both C++), one shot at a time, warm-up discarded:
+
+      t_fast      one MWPM decode
+      t_reweight  the graph mutation an erased atom forces, when the shot has one
+      t_gap       the two extra MWPM decodes the complementary gap costs
+      t_slow      one BP+OSD decode
+
+    The Python overhead is measured too and reported separately, so the reader can see how
+    much of the wall time is ours rather than the algorithm's.
+    """
     noise = NoiseModel.uniform(P_TARGET, loss_ratio=LOSS_RATIO)
     pr = build_problem(PROGRAMS[cname](), d, noise)
     md = ErasureMatchingDecoder(pr, with_gap=True)
@@ -77,37 +96,69 @@ def measure_latency(cname: str, d: int) -> dict:
 
     her, syn, _ = pr.sample(N_LAT_MATCH, seed=99)
     syn_u8 = np.ascontiguousarray(syn.astype(np.uint8))
+    n = N_LAT_MATCH
 
-    # warm-up, thrown away
-    for i in range(50):
-        md.decode_grouped_full(syn_u8[i : i + 1], her[i : i + 1], with_gap=True)
+    base = md.matching
+    for i in range(200):
+        base.decode(syn_u8[i])
 
-    t_fast = np.empty(N_LAT_MATCH)
-    t_full = np.empty(N_LAT_MATCH)
-    for i in range(N_LAT_MATCH):
-        s1, h1 = syn_u8[i : i + 1], her[i : i + 1]
+    # --- fast leg: one MWPM decode, plus the reweighting when the shot lost an atom ------
+    t_fast = np.empty(n)
+    t_rw = np.empty(n)
+    for i in range(n):
+        s_i, h_i = syn_u8[i], her[i]
         t0 = time.perf_counter_ns()
-        md.decode_grouped_full(s1, h1, with_gap=False)
+        applied = md._apply(h_i) if h_i.any() else None
         t1 = time.perf_counter_ns()
-        md.decode_grouped_full(s1, h1, with_gap=True)
+        base.decode(s_i)
         t2 = time.perf_counter_ns()
-        t_fast[i] = (t1 - t0) * 1e-3  # us
-        t_full[i] = (t2 - t1) * 1e-3
+        if applied is not None:
+            md._restore(applied)
+        t_rw[i] = (t1 - t0) * 1e-3
+        t_fast[i] = (t2 - t1) * 1e-3
 
-    for i in range(10):
-        bp.decode_shot(syn_u8[i])
+    # --- the complementary gap: two more MWPM decodes on the promoted-observable graphs --
+    t_gap = np.empty(n)
+    forced = np.zeros(pr.n_dets + 1, dtype=np.uint8)
+    for i in range(n):
+        t0 = time.perf_counter_ns()
+        for mk in md.gap_matchers:
+            forced[: pr.n_dets] = syn_u8[i]
+            forced[pr.n_dets] = 1
+            mk.decode(forced)
+        t_gap[i] = (time.perf_counter_ns() - t0) * 1e-3
+
+    # --- slow leg -----------------------------------------------------------------------
+    for i in range(20):
+        bp.dec.decode(syn_u8[i])
     t_slow = np.empty(N_LAT_BPOSD)
     for i in range(N_LAT_BPOSD):
         t0 = time.perf_counter_ns()
-        bp.decode_shot(syn_u8[i])
+        bp.dec.decode(syn_u8[i])
         t_slow[i] = (time.perf_counter_ns() - t0) * 1e-3
 
+    # --- what our own Python wrapper adds on top ----------------------------------------
+    t_py = np.empty(2000)
+    for i in range(2000):
+        t0 = time.perf_counter_ns()
+        md.decode_grouped_full(syn_u8[i : i + 1], her[i : i + 1], with_gap=False)
+        t_py[i] = (time.perf_counter_ns() - t0) * 1e-3
+    overhead = float(np.median(t_py) - np.median(t_fast + t_rw))
+
+    fast_total = t_fast + t_rw
     return {
-        "t_fast": t_fast, "t_gap": t_full - t_fast, "t_slow": t_slow,
-        "fast_med": float(np.median(t_fast)), "fast_p99": float(np.percentile(t_fast, 99)),
-        "gap_med": float(np.median(t_full - t_fast)),
-        "slow_med": float(np.median(t_slow)), "slow_p99": float(np.percentile(t_slow, 99)),
-        "slowdown": float(np.median(t_slow) / np.median(t_fast)),
+        "t_fast": fast_total, "t_gap": t_gap, "t_slow": t_slow,
+        "fast_med": float(np.median(fast_total)),
+        "fast_p99": float(np.percentile(fast_total, 99)),
+        "reweight_med": float(np.median(t_rw)),
+        "reweight_mean": float(np.mean(t_rw)),
+        "erasure_frac": float(her.any(axis=1).mean()) if her.size else 0.0,
+        "gap_med": float(np.median(t_gap)),
+        "slow_med": float(np.median(t_slow)),
+        "slow_p99": float(np.percentile(t_slow, 99)),
+        "slow_mean": float(np.mean(t_slow)),
+        "slowdown": float(np.median(t_slow) / max(np.median(fast_total), 1e-9)),
+        "python_overhead_med": overhead,
     }
 
 
@@ -184,8 +235,8 @@ if __name__ == "__main__":
     out: dict = {"machine": MACHINE, "latency": {}, "pareto": {}, "importance": {}}
 
     print(f"machine of record: {MACHINE}\n")
-    print(f"{'circuit':<10} {'d':>2} | {'match med':>10} {'match p99':>10} {'gap med':>9} "
-          f"{'bposd med':>10} {'bposd p99':>10} | {'slowdown':>9}")
+    print(f"{'circuit':<10} {'d':>2} | {'match med':>10} {'match p99':>10} {'reweight':>9} "
+          f"{'gap':>8} {'bposd med':>10} {'bposd p99':>11} | {'slowdown':>8} {'py ovh':>7}")
 
     lats = {}
     for cname in PROGRAMS:
@@ -195,9 +246,10 @@ if __name__ == "__main__":
             out["latency"][f"{cname}_d{d}"] = {
                 k: v for k, v in lat.items() if not isinstance(v, np.ndarray)
             }
-            print(f"{cname:<10} {d:>2} | {lat['fast_med']:>9.1f}u {lat['fast_p99']:>9.1f}u "
-                  f"{lat['gap_med']:>8.1f}u {lat['slow_med']:>9.1f}u {lat['slow_p99']:>9.1f}u | "
-                  f"{lat['slowdown']:>8.0f}x")
+            print(f"{cname:<10} {d:>2} | {lat['fast_med']:>9.2f}u {lat['fast_p99']:>9.1f}u "
+                  f"{lat['reweight_mean']:>8.2f}u {lat['gap_med']:>7.2f}u "
+                  f"{lat['slow_med']:>9.1f}u {lat['slow_p99']:>10.0f}u | "
+                  f"{lat['slowdown']:>7.0f}x {lat['python_overhead_med']:>6.1f}u")
 
     for cname in PROGRAMS:
         with open(DATA / f"model_{cname}.pkl", "rb") as f:

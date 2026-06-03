@@ -59,13 +59,15 @@ def oracle_scorer(y: np.ndarray, seed: int = 0) -> Scorer:
 
     Unreachable by construction -- it is the ceiling of the Pareto plot.
 
-    The scores are ``y * (1 + u)`` with u uniform, not just ``y``. A binary score would give
-    a threshold sweep only two points; the random tiebreak lets tau sweep out the *fraction*
-    of true failures that get escalated, which is the curve we actually want to draw. No
-    non-failing shot ever scores above 0, so the oracle stays an oracle.
+    The scores are ``y + u`` with u uniform on [0, 1), not just ``y``. Failures land in
+    [1, 2) and successes in [0, 1), so they never interleave -- the oracle stays an oracle.
+    But the threshold now sweeps *continuously* through both regimes: above 1 it escalates a
+    growing fraction of the true failures, below 1 it escalates all of them plus a growing
+    fraction of the (unnecessary) successes. A bare binary score would give the sweep two
+    points and a straight line drawn across the gap between them.
     """
     rng = np.random.default_rng(seed)
-    return Scorer("oracle", y.astype(float) * (1.0 + rng.random(len(y))), cost_matchings=0.0)
+    return Scorer("oracle", y.astype(float) + rng.random(len(y)), cost_matchings=0.0)
 
 
 # --------------------------------------------------------------------------------------

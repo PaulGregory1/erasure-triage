@@ -35,15 +35,17 @@ two patches; the decomposed graph can only write that as two independent errors,
 weight equals that of the honest single-fault explanation. Matching coin-flips, and half the
 time it flips the logical class. BP+OSD keeps the hyperedge and is never fooled.
 
-Confirmed independently by the error scaling — same shots, same DEM, only the decoder differs:
+Confirmed independently by the error scaling. Fitting LER ∝ p^s (slope should be ⌈d/2⌉ for a
+distance-*d* decoder), same shots, only the decoder differs:
 
-| decoder | LER ∝ p^s, s = | effective distance |
-|---|---|---|
-| MWPM, memory d=5 | 2.98 | 5 ✓ |
-| MWPM, cnot r=1 d=5 | **1.16** | **2** |
-| BP+OSD, cnot r=1 d=5 | **5.90** | 5 ✓ (= p^⌈d/2⌉) |
+| circuit | MWPM slope (d = 3 / 5 / 7) | BP+OSD slope | verdict |
+|---|---|---|---|
+| memory | 1.99 / 2.87 / 3.89 | tracks ⌈d/2⌉ | matching scales fine |
+| cnot r=1 | **1.19 / 1.31 / 1.28** | 1.76 / 2.74 / 3.05 | **matching is flat — effective distance 2** |
 
-The code has distance *d* — Stim confirms it. It is the **decoder** that loses the distance.
+On memory, matching's slope grows with *d*. On the transversal CNOT it is flat at ~1.3 for
+every distance — adding rows of qubits buys nothing. The code has distance *d* (Stim confirms
+it); it is the **decoder** that loses the distance.
 
 ### And there is no cheap escape (`cnot r=1`, d = 5)
 
@@ -66,17 +68,64 @@ real work, and that is what makes the slow decoder slow.
 is not "can we shave latency", it is "how few shots can we escalate and still get distance-*d*
 scaling".
 
-Answer: **~0.5%**.
+Answer: **~0.5%** — and the cheapest possible trigger gets you there.
+
+## The triage, and the honest version of the result
+
+Labels are free: a shot is "positive" iff the fast decoder got the logical class wrong, and
+Stim hands over the truth, so no slow decode is needed to label. The escalation trigger is
+then a score per shot, swept into a Pareto front. The baseline that matters is **gap only**: a
+threshold on the *complementary gap* (decode twice, once with the observable forced each way,
+take the weight difference) — one extra matching, no model, no training.
+
+| cnot, d = 5, at deployment noise | escalate | logical error |
+|---|---|---|
+| never (matching alone) | 0% | 4.7e-3 |
+| always (BP+OSD) | 100% | 1.8e-4 |
+| **gap only** | **5%** | **1.9e-4** |
+| LightGBM (400 trees, 34 features) | 5% | 6.2e-4 |
+
+The near-free heuristic reaches BP+OSD's accuracy escalating 5% of shots, and the trained model
+does **not** beat it at deployment noise — it wins in-distribution and fails to transfer,
+because the matching weight is in log-odds units that move with the noise rate (details and two
+fixes in `scripts/09_mixture.py`). Reported as-is: *the complementary gap is most of the
+signal.* A tiny MLP was also trained; it trails the trees at ~100× the inference cost, and
+inference is the binding constraint. The model transfers across code *distance* cleanly, though
+— trained on d = 3, 5, it hits BP+OSD's floor on held-out d = 7 (Figure 4).
 
 ---
+
+## The atom-loss lever
+
+Atom loss on neutral atoms is *heralded* — you know which qubit vanished. An erased atom's
+Pauli frame is a coin flip, which in matching units is **weight 0**. So the right move is to
+zero the weight of the touched edges **per shot**, not to fold the loss rate into the noise
+model. Memory threshold, three decoders:
+
+| p_loss / p_2q | (a) erasure ignored | (b) erasure as Pauli noise | (c) per-shot reweighting |
+|---|---|---|---|
+| 0.0 | 0.77% | 0.78% | 0.77% |
+| 1.0 | 0.68% | 0.67% | **0.75%** |
+| 2.0 | 0.59% | 0.60% | **0.73%** |
+
+The striking line is that **(b) ≈ (a)**: telling the decoder the *average* loss rate, without
+telling it *which* atom was lost on *this* shot, buys nothing at all. Only the per-shot herald
+keeps the threshold flat.
+
+A subtlety the ablation makes precise (Figure 3): the herald pays off in the **decoder**
+(reweighting), not in the **triage classifier**. The erasure features contribute ~1% of the
+model's attribution, because the complementary gap — computed on the already-reweighted graph —
+already reflects whatever uncertainty a lost atom introduces. The herald makes the fast decoder
+better; the gap then reads out the residual uncertainty regardless of where it came from.
 
 ## Figures
 
 | | |
 |---|---|
+| `figs/00_distance_collapse.png` | MWPM's d = 3, 5, 7 curves collapse onto one line; BP+OSD's don't |
 | `figs/01_erasure_threshold.png` | threshold vs atom-loss rate, with and without per-shot reweighting |
 | `figs/02_pareto.png` | **the figure** — logical error per transversal CNOT vs latency (mean + p99) |
-| `figs/03_feature_importance.png` | does the heralded-loss information actually carry the gain? |
+| `figs/03_feature_importance.png` | what the model *used* (SHAP) and what it *needed* (ablation) |
 | `figs/04_generalization.png` | train at d = 3, 5; evaluate at d = 7 without retraining |
 
 ---
