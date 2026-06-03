@@ -85,13 +85,16 @@ take the weight difference) — one extra matching, no model, no training.
 | **gap only** | **5%** | **1.9e-4** |
 | LightGBM (400 trees, 34 features) | 5% | 6.2e-4 |
 
-The near-free heuristic reaches BP+OSD's accuracy escalating 5% of shots, and the trained model
-does **not** beat it at deployment noise — it wins in-distribution and fails to transfer,
-because the matching weight is in log-odds units that move with the noise rate (details and two
-fixes in `scripts/09_mixture.py`). Reported as-is: *the complementary gap is most of the
-signal.* A tiny MLP was also trained; it trails the trees at ~100× the inference cost, and
-inference is the binding constraint. The model transfers across code *distance* cleanly, though
-— trained on d = 3, 5, it hits BP+OSD's floor on held-out d = 7 (Figure 4).
+The near-free heuristic reaches BP+OSD's accuracy escalating 5% of shots. A *naively* trained
+LightGBM does **not** beat it at deployment noise — it wins in-distribution and fails to
+transfer, because the matching weight is in log-odds units that move with the noise rate. That
+failure is diagnosable and fixable: retrain on a **blend** of noise levels and the model beats
+the gap by 3–7× (`scripts/09_mixture.py`; cnot d=5 goes from 6.2e-4 to 2.1e-4 at 1% escalation).
+So the honest arc is *the complementary gap is most of the signal, and a units-aware model beats
+it.* A tiny MLP was also tried; it does not beat the trees, and its inference is no cheaper in
+practice — LightGBM's own per-shot inference (16 µs) already exceeds the gap it improves on, and
+inference is the binding constraint. The model transfers across code *distance* cleanly too:
+trained on d = 3, 5, it hits BP+OSD's floor on held-out d = 7 (Figure 4).
 
 ---
 
@@ -162,7 +165,7 @@ src/
   features.py    34 per-shot features, graded by what they cost
   triage.py      the escalation models and the full baseline ladder
   evaluate.py    error bars, per-shot latency, the single-fault test
-scripts/01..08   one phase each; each writes JSON into data/
+scripts/01..09   one phase each; each writes JSON into data/
 ```
 
 The core piece is `circuits.py`. A transversal CNOT makes a stabilizer of patch *p* map to
