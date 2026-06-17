@@ -31,6 +31,7 @@ from src.decoders import (  # noqa: E402
     IndependentMatchingDecoder,
     MatchingDecoder,
 )
+from src.config import QUICK  # noqa: E402
 from src.config import shots as _shots  # noqa: E402
 from src.evaluate import single_fault_failures  # noqa: E402
 from src.noise import NoiseModel  # noqa: E402
@@ -62,7 +63,7 @@ def check_distance() -> list[dict]:
         ("chain3 r=1", lambda d: cnot_chain(1, "Z")),
         ("ghz4 r=1", lambda d: ghz(1, 4)),
     ]:
-        for d in (3, 5):
+        for d in ((3,) if QUICK else (3, 5)):
             cc = compile_program(make(d), d, noise)
             err = cc.circuit.search_for_undetectable_logical_errors(
                 dont_explore_detection_event_sets_with_size_above=6,
@@ -71,7 +72,7 @@ def check_distance() -> list[dict]:
                 canonicalize_circuit_errors=True,
             )
             ok = len(err) == d
-            print(f"{name:<16} {d:>2} {len(err):>6} {d:>9}  {'PASS' if ok else 'FAIL':<6}")
+            print(f"{name:<16} {d:>2} {len(err):>6} {d:>9}  {'PASS' if ok else 'FAIL':<6}", flush=True)
             rows.append({"circuit": name, "d": d, "distance": len(err), "pass": ok})
             assert ok, f"{name} d={d}: distance {len(err)} != {d}. Fix §3.2 before anything else."
     return rows
@@ -118,14 +119,17 @@ def check_single_faults() -> list[dict]:
     rows = []
     print(f"{'circuit':<12} {'d':>2} {'faults':>6} | {'MWPM':>6} {'(cross)':>8} "
           f"{'MWPM+corr':>10} {'BP only':>8} {'BP+OSD':>7} | {'hyper':>6} {'dropped':>8}")
-    for name, make, d in [
+    cases = [
         ("memory", lambda d: memory(d, "Z"), 5),
         ("cnot r=1", lambda d: transversal_cnot(1, "Z"), 3),
         ("cnot r=1", lambda d: transversal_cnot(1, "Z"), 5),
         ("cnot r=1", lambda d: transversal_cnot(1, "Z"), 7),
         ("cnot r=d", lambda d: transversal_cnot(d, "Z"), 5),
         ("chain3 r=1", lambda d: cnot_chain(1, "Z"), 5),
-    ]:
+    ]
+    if QUICK:  # the two heaviest BP+OSD cases add nothing the d=3/5/7 cnot rows do not
+        cases = [c for c in cases if c[0] not in ("cnot r=d", "chain3 r=1")]
+    for name, make, d in cases:
         pr = build_problem(make(d), d, noise)
         m = single_fault_failures(pr, MatchingDecoder(pr, with_gap=False))
         cm_dec = CorrelatedMatchingDecoder(pr)

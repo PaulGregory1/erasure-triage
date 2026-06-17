@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.circuits import memory, transversal_cnot  # noqa: E402
+from src.config import QUICK, budget_s  # noqa: E402
 from src.config import shots as _shots  # noqa: E402
 from src.dem_utils import build_problem  # noqa: E402
 from src.decoders import BpOsdDecoder, MatchingDecoder  # noqa: E402
@@ -40,9 +41,10 @@ FIGS.mkdir(exist_ok=True)
 DISTANCES = (3, 5, 7)
 # The range runs high enough that BP+OSD actually *fails* sometimes -- otherwise its slope
 # is unmeasurable and the plot is all upper limits.
-PS = np.array([3e-4, 5e-4, 1e-3, 2e-3, 3e-3, 5e-3, 8e-3])
+PS = np.array([1e-3, 2e-3, 3e-3, 5e-3, 8e-3]) if QUICK else \
+     np.array([3e-4, 5e-4, 1e-3, 2e-3, 3e-3, 5e-3, 8e-3])
 SHOTS = _shots(400_000)
-BPOSD_BUDGET_S = 40.0
+BPOSD_BUDGET_S = budget_s(40.0)
 
 COLORS = {3: "#4C72B0", 5: "#DD8452", 7: "#55A868"}
 

@@ -27,6 +27,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.circuits import cnot_chain, ghz, memory, transversal_cnot  # noqa: E402
+from src.config import budget_s  # noqa: E402
 from src.config import shots as _shots  # noqa: E402
 from src.dem_utils import build_problem  # noqa: E402
 from src.decoders import BpOsdDecoder, ErasureMatchingDecoder  # noqa: E402
@@ -45,7 +46,7 @@ P_TARGET = 1e-3
 P_TRAIN = 3e-3
 LOSS_RATIO = 1.0
 SHOTS = _shots(150_000)
-BPOSD_BUDGET_S = 120.0
+BPOSD_BUDGET_S = budget_s(120.0)
 
 CASES = [
     ("cnot r=1", lambda d: transversal_cnot(1, "Z"), 3),
