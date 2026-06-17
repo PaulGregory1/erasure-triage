@@ -138,13 +138,16 @@ better; the gap then reads out the residual uncertainty regardless of where it c
 ```bash
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt        # macOS also needs: brew install libomp
-python run_all.py                      # ~1 h on a laptop
-python run_all.py --quick              # ~10 min, wider error bars, same conclusions
+python run_all.py                      # ~1 h on a laptop (Apple M3 Pro)
+python run_all.py --quick              # ~20 min, wider error bars, same conclusions
+python run_all.py --from 06_train_triage   # resume from a stage
 pytest tests/                          # the distance check and the single-fault check
 ```
 
 No GPU. No cluster. The whole thing runs on one laptop core-hour budget, which is the point:
 compare against a repo that needs 40 h of A100 and ask which one a reviewer will actually run.
+The wall time is dominated by BP+OSD (the slow decoder itself), not by anything that would go
+faster on better hardware — which is rather the point of the project.
 
 **Machine of record for every latency number:** Apple M3 Pro, `OMP_NUM_THREADS=1`, per-shot
 `perf_counter_ns`, warm-up discarded, median and p99 over ≥10⁴ shots. A mean taken over a

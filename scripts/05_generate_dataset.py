@@ -24,6 +24,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.circuits import cnot_chain, transversal_cnot  # noqa: E402
+from src.config import QUICK  # noqa: E402
 from src.config import shots as _shots  # noqa: E402
 from src.noise import NoiseModel  # noqa: E402
 from src.sampling import generate_dataset  # noqa: E402
@@ -43,8 +44,13 @@ TRAIN_SHOTS = _shots(2_000_000)
 # from that cost, not from a round number: enough shots to leave a few hundred fast-decoder
 # failures in each set, and no more. The d=7 sets are the held-out generalisation test, so
 # they only need to resolve the *shape* of the curve, not its fourth digit.
+#
+# In quick mode the floor is dropped to 1500: BP+OSD does not shot-scale, so a high floor
+# would make chain3 d=7 (150 ms/shot) dominate the whole run. The curves get noisier; the
+# conclusions do not change.
+_EVAL_FLOOR = 1_500 if QUICK else 10_000
 EVAL_SHOTS = {
-    k: _shots(v, floor=10_000) for k, v in {
+    k: _shots(v, floor=_EVAL_FLOOR) for k, v in {
         ("cnot", 3): 300_000, ("cnot", 5): 300_000, ("cnot", 7): 150_000,
         ("chain3", 3): 200_000, ("chain3", 5): 100_000, ("chain3", 7): 20_000,
     }.items()

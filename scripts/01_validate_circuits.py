@@ -31,7 +31,7 @@ from src.decoders import (  # noqa: E402
     IndependentMatchingDecoder,
     MatchingDecoder,
 )
-from src.config import QUICK  # noqa: E402
+from src.config import QUICK, budget_s  # noqa: E402
 from src.config import shots as _shots  # noqa: E402
 from src.evaluate import single_fault_failures  # noqa: E402
 from src.noise import NoiseModel  # noqa: E402
@@ -41,7 +41,7 @@ OUT.mkdir(exist_ok=True)
 
 P = 3e-3
 SHOTS = _shots(200_000)
-BPOSD_BUDGET_S = 45.0  # per S2 cell; BP+OSD spans 4 orders of magnitude in cost
+BPOSD_BUDGET_S = budget_s(45.0)  # per S2 cell; BP+OSD spans 4 orders of magnitude in cost
 
 
 def rule(title: str) -> None:
