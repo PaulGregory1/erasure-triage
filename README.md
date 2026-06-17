@@ -139,7 +139,7 @@ better; the gap then reads out the residual uncertainty regardless of where it c
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt        # macOS also needs: brew install libomp
 python run_all.py                      # ~1 h on a laptop (Apple M3 Pro)
-python run_all.py --quick              # ~20 min, wider error bars, same conclusions
+python run_all.py --quick              # ~30 min, wider error bars, same conclusions
 python run_all.py --from 06_train_triage   # resume from a stage
 pytest tests/                          # the distance check and the single-fault check
 ```
